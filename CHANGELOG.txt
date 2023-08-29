@@ -1,0 +1,8 @@
+v 1.0.0(beta):
+ -Added timer
+ -Added button that starts the timer
+ -Added textField with remaining time
+ -Added 3 textFields that allow user to customize their work time, rest time and long rest time
+ -Added a cosmetic image of pomodoro
+ -Added animation to pomodoro image
+ -Added 2 textField near timer to show how many pomodoro cycles had ended and how many were skipped(they don't work for this version)
