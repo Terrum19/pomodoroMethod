@@ -179,7 +179,7 @@ def main(page: ft.Page):
         long_chill_time
     ])
 
-    page.add(pomodoro_stats, stacked_ring)
+    page.add(pomodoro_stats, elapsed_time)
 
     pomodoro_button = ft.ElevatedButton(
         text="Запустить помидор",
