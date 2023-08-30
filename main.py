@@ -46,54 +46,58 @@ def main(page: ft.Page):
                 pomodoro_button.text = 'Начать работу'
         pomodoro_button.update()
 
-
     def buttonProgressionStart(e):
         nonlocal working_loop
         nonlocal times_worked
 
-        pomodoro_button.disabled = True
+        try:
+            int(working_time.value)
+            pomodoro_button.disabled = True
 
-        if working_loop:
-            start = time.time()
-            WORKTIME = int(working_time.value) * 60
+            if working_loop:
+                start = time.time()
+                WORKTIME = int(working_time.value) * 60
 
-            pomodoro_button.text = "Помидор запущен"
-            pomodoro_button.update()
+                pomodoro_button.text = "Помидор запущен"
+                pomodoro_button.update()
 
-            for i in range(WORKTIME + 1):
-                if isclose(progress_ring.value, 1):
-                    ringReset(mode='work')
-                else:
-                    ringProgression(0.01, working_time, start)
-        elif times_worked == 3:
-            start = time.time()
-            LONGCHILLTIME = int(long_chill_time.value) * 60
+                for i in range(WORKTIME + 1):
+                    if isclose(progress_ring.value, 1):
+                        ringReset(mode='work')
+                    else:
+                        ringProgression(1, working_time, start)
+            elif times_worked == 3:
+                start = time.time()
+                LONGCHILLTIME = int(long_chill_time.value) * 60
 
-            pomodoro_button.text = "Длительный отдых запущен"
-            pomodoro_button.update()
+                pomodoro_button.text = "Длительный отдых запущен"
+                pomodoro_button.update()
 
-            for i in range(LONGCHILLTIME + 1):
-                if isclose(progress_ring.value, 1):
-                    ringReset(mode='longchill')
-                    times_worked = 0
-                else:
-                    ringProgression(0.01, long_chill_time, start)
+                for i in range(LONGCHILLTIME + 1):
+                    if isclose(progress_ring.value, 1):
+                        ringReset(mode='longchill')
+                        times_worked = 0
+                    else:
+                        ringProgression(1, long_chill_time, start)
 
-        elif not working_loop:
-            start = time.time()
-            CHILLTIME = int(chill_time.value) * 60
+            elif not working_loop:
+                start = time.time()
+                CHILLTIME = int(chill_time.value) * 60
 
-            pomodoro_button.text = "Отдых запущен"
-            pomodoro_button.update()
+                pomodoro_button.text = "Отдых запущен"
+                pomodoro_button.update()
 
-            for i in range(CHILLTIME + 1):
-                if isclose(progress_ring.value, 1):
-                    ringReset(mode='chill')
-                    times_worked += 1
-                else:
-                    ringProgression(0.01, chill_time, start)
-
-
+                for i in range(CHILLTIME + 1):
+                    if isclose(progress_ring.value, 1):
+                        ringReset(mode='chill')
+                        times_worked += 1
+                    else:
+                        ringProgression(1, chill_time, start)
+        except ValueError:
+            page.add(ft.AlertDialog(
+                content=ft.Text('Не число или незаполненны поля')
+            ))
+            page.update()
 
     page.theme_mode = ft.ThemeMode.DARK
     page.title = 'Pomodoro Method'
@@ -101,19 +105,28 @@ def main(page: ft.Page):
     times_worked = 0
 
     pomodoro = ft.Image(
-        width=200,
-        height=200,
+        width=70,
+        height=70,
         src='https://i.postimg.cc/JzZGs5sP/Removal-17.png',
         border_radius=5,
-        offset=ft.transform.Offset(-2, 0),
-        animate_offset=ft.animation.Animation(500),
         rotate=ft.transform.Rotate(0, alignment=ft.alignment.center),
-        animate_rotation=ft.animation.Animation(300, ft.AnimationCurve.BOUNCE_OUT),
+        animate_rotation=ft.Animation(500, ft.AnimationCurve.BOUNCE_IN)
     )
+
+    pomodoro_button = ft.ElevatedButton(
+        text="Запустить помидор",
+        autofocus=True,
+        on_click=buttonProgressionStart,
+        style=ft.ButtonStyle(
+            shape={
+                ft.MaterialState.HOVERED: RoundedRectangleBorder(radius=20),
+                ft.MaterialState.DEFAULT: RoundedRectangleBorder(radius=10)
+            },
+            bgcolor='#F50A0A'
+        ))
 
     progress_ring = ft.ProgressRing(
         width=300, height=300, stroke_width=9, value=0,
-
     )
 
     time_container = ft.Container(
@@ -138,18 +151,34 @@ def main(page: ft.Page):
     elapsed_time = ft.TextField(
         value='0',
         disabled=True,
-        width=100
+        width=100,
     )
 
-    stacked_ring = ft.Stack([
-        time_container,
-        elapsed_time
-    ]
+    elapsed_time_container = ft.Container(
+        content=elapsed_time,
+        gradient=ft.LinearGradient(
+            colors=[
+                "#f72585",
+                "#b5179e",
+                "#7209b7",
+                "#560bad",
+                "#480ca8",
+                "#3a0ca3",
+                "#3f37c9",
+                "#4361ee",
+                "#4895ef",
+                "#4cc9f0"
+            ],
+            begin=ft.alignment.top_left,
+            end=ft.alignment.bottom_center
+        ),
+        border_radius=10
     )
 
     working_time = ft.TextField(hint_text="Введите время работы(в минутах)")
     chill_time = ft.TextField(hint_text='Введите время отдыха(в минутах)')
     long_chill_time = ft.TextField(hint_text='Введите время продолжительного отдыха(в минутах)')
+
 
     minus = ft.IconButton(
         icon=ft.icons.EXPOSURE_MINUS_1_SHARP
@@ -160,42 +189,62 @@ def main(page: ft.Page):
     )
 
     pomodoro_stats = ft.Row([
-        time_container,
         ft.Column([
-            ft.TextField(value='Помидоров прошло: '),
             ft.Row([
                 minus,
-                ft.TextField(value='Помидоров пропущено: '),
+                ft.TextField(value='Помидоров пройдено: '),
                 plus
             ])
-
         ])
-
     ])
 
-    users_wishes = ft.Row([
-        working_time,
-        chill_time,
-        long_chill_time
-    ])
+    rail = ft.NavigationRail(
+        selected_index=0,
+        label_type=ft.NavigationRailLabelType.ALL,
+        min_width=100,
+        min_extended_width=400,
+        height=400,
+        leading=ft.FloatingActionButton(icon=ft.icons.CREATE, text="Add"),
+        group_alignment=-0.9,
+        destinations=[
+            ft.NavigationRailDestination(
+                icon=ft.icons.FAVORITE_BORDER, selected_icon=ft.icons.FAVORITE, label="First"
+            ),
+            ft.NavigationRailDestination(
+                icon_content=ft.Icon(ft.icons.BOOKMARK_BORDER),
+                selected_icon_content=ft.Icon(ft.icons.BOOKMARK),
+                label="Second",
+            ),
+            ft.NavigationRailDestination(
+                icon=ft.icons.SETTINGS_OUTLINED,
+                selected_icon_content=ft.Icon(ft.icons.SETTINGS),
+                label_content=ft.Text("Settings"),
+            ),
+        ],
+    )
 
-    page.add(pomodoro_stats, e;)
+    main_content = ft.Row([
+        rail,
+        ft.VerticalDivider(color='green'),
+        ft.Column([
+            time_container,
+            ft.Row([
+                pomodoro_button, elapsed_time_container, pomodoro
+            ],
+                spacing=50
+            ),
+            pomodoro_stats,
+            working_time,
+            chill_time,
+            long_chill_time
+        ])
+    ],
+        spacing=0,
+    )
 
-    pomodoro_button = ft.ElevatedButton(
-        text="Запустить помидор",
-        autofocus=True,
-        on_click=buttonProgressionStart,
-        style=ft.ButtonStyle(
-            shape={
-                ft.MaterialState.HOVERED: RoundedRectangleBorder(radius=20),
-                ft.MaterialState.DEFAULT: RoundedRectangleBorder(radius=10)
-            },
-            bgcolor='#F50A0A'
-        ))
-
-    page.add(pomodoro_button, users_wishes, pomodoro)
+    page.add(main_content)
+    print(page)
     time.sleep(0.4)
-    animate(pomodoro)
 
 
 ft.app(target=main)
