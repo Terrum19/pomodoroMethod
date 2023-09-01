@@ -6,10 +6,6 @@ from flet_core import RoundedRectangleBorder, Alignment
 
 
 def main(page: ft.Page):
-    def animate(e):
-        pomodoro.offset = ft.transform.Offset(0, 0)
-        pomodoro.update()
-
     def ringProgression(progressionSpeed, mode, start):
         progress_ring.color = ft.colors.WHITE
         progress_ring.value += 1 / (int(mode.value) * 60)
@@ -17,7 +13,7 @@ def main(page: ft.Page):
         pomodoro.rotate.angle += pi / 2
         pomodoro.update()
         time.sleep(progressionSpeed)
-        elapsed_time.value = str(int(mode.value) * 60 - (time.time() - start))
+        elapsed_time.value = round(int(int(mode.value) * 60 - (time.time() - start)) / 60, 1)
         elapsed_time.update()
 
     def ringReset(mode):
@@ -94,15 +90,22 @@ def main(page: ft.Page):
                     else:
                         ringProgression(1, chill_time, start)
         except ValueError:
-            page.add(ft.AlertDialog(
-                content=ft.Text('Не число или незаполненны поля')
-            ))
-            page.update()
+            open_dlg(e)
+
 
     page.theme_mode = ft.ThemeMode.DARK
     page.title = 'Pomodoro Method'
     working_loop = True
     times_worked = 0
+
+    alert = ft.AlertDialog(
+        title=ft.Text('Некорректно введено поле'),
+            )
+
+    def open_dlg(e):
+        page.dialog = alert
+        alert.open = True
+        page.update()
 
     pomodoro = ft.Image(
         width=70,
@@ -152,22 +155,18 @@ def main(page: ft.Page):
         value='0',
         disabled=True,
         width=100,
+        color=ft.colors.WHITE
     )
 
     elapsed_time_container = ft.Container(
         content=elapsed_time,
         gradient=ft.LinearGradient(
             colors=[
-                "#f72585",
-                "#b5179e",
-                "#7209b7",
-                "#560bad",
-                "#480ca8",
-                "#3a0ca3",
-                "#3f37c9",
-                "#4361ee",
-                "#4895ef",
-                "#4cc9f0"
+                "#250902",
+                "#38040e",
+                "#640d14",
+                "#800e13",
+                "#ad2831"
             ],
             begin=ft.alignment.top_left,
             end=ft.alignment.bottom_center
@@ -175,9 +174,15 @@ def main(page: ft.Page):
         border_radius=10
     )
 
-    working_time = ft.TextField(hint_text="Введите время работы(в минутах)")
-    chill_time = ft.TextField(hint_text='Введите время отдыха(в минутах)')
-    long_chill_time = ft.TextField(hint_text='Введите время продолжительного отдыха(в минутах)')
+    working_time = ft.TextField(
+        hint_text="Введите время работы(в минутах)",
+        keyboard_type=ft.KeyboardType.NUMBER)
+    chill_time = ft.TextField(
+        hint_text='Введите время отдыха(в минутах)',
+        keyboard_type=ft.KeyboardType.NUMBER)
+    long_chill_time = ft.TextField(
+        hint_text='Введите время продолжительного отдыха(в минутах)',
+        keyboard_type=ft.KeyboardType.NUMBER)
 
 
     minus = ft.IconButton(
