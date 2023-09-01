@@ -7,13 +7,15 @@ from flet_core import RoundedRectangleBorder, Alignment
 
 def main(page: ft.Page):
     def ringProgression(progressionSpeed, timer_time, start):
+        minutes = '{:02d}'.format(round(timer_time * 60 - (time.time() - start))//60)
+        seconds = '{:02d}'.format(round((timer_time*60 - (time.time() - start))%60))
         progress_ring.color = ft.colors.WHITE
         progress_ring.value += 1 / (int(timer_time) * 60)
         progress_ring.update()
         pomodoro.rotate.angle += pi / 2
         pomodoro.update()
         time.sleep(progressionSpeed)
-        elapsed_time.value = f'{(int(timer_time)*60 - (time.time() - start)) / 60}'
+        elapsed_time.value = f"{minutes}:{seconds}"
         elapsed_time.update()
 
     def ringReset(mode):
@@ -95,7 +97,6 @@ def main(page: ft.Page):
             longchill_time = slider.value
             minutes_on_slider.value = slider.value
         minutes_on_slider.update()
-
 
     def change_slider_value(e):
         if dropdown_selector.value == 'work':
