@@ -22,6 +22,9 @@ def main(page: ft.Page):
         nonlocal working_loop
         nonlocal times_worked
 
+        page.add(audio1)
+        audio1.update()
+
         i = 0.001
         progress_ring.color = ft.colors.GREEN
         progress_ring.update()
@@ -46,6 +49,12 @@ def main(page: ft.Page):
         nonlocal working_loop
         nonlocal times_worked
 
+        try:
+            audio1.pause()
+            audio1.update()
+        except AttributeError:
+            pass
+
         pomodoro_button.disabled = True
 
         if working_loop:
@@ -57,7 +66,7 @@ def main(page: ft.Page):
                 if isclose(progress_ring.value, 1):
                     ringReset(mode='work')
                 else:
-                    ringProgression(1, work_time, start)
+                    ringProgression(0.01, work_time, start)
         elif times_worked == 3:
             start = time.time()
             LONGCHILLTIME = int(longchill_time) * 60
@@ -117,6 +126,10 @@ def main(page: ft.Page):
     page.title = 'Pomodoro Method'
     working_loop = True
     times_worked = 0
+
+    audio1 = ft.Audio(
+        src="https://luan.xyz/files/audio/ambient_c_motion.mp3", autoplay=True
+    )
 
     pomodoro = ft.Image(
         width=70,
@@ -206,6 +219,8 @@ def main(page: ft.Page):
         on_change=change_slider_value
     )
 
+    dropdown_selector.value = 'work'
+
     minus = ft.IconButton(
         icon=ft.icons.EXPOSURE_MINUS_1_SHARP
     )
@@ -271,8 +286,5 @@ def main(page: ft.Page):
     )
 
     page.add(main_content)
-    print(page)
-    time.sleep(0.4)
-
 
 ft.app(target=main)
