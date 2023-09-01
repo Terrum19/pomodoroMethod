@@ -6,14 +6,14 @@ from flet_core import RoundedRectangleBorder, Alignment
 
 
 def main(page: ft.Page):
-    def ringProgression(progressionSpeed, mode, start):
+    def ringProgression(progressionSpeed, timer_time, start):
         progress_ring.color = ft.colors.WHITE
-        progress_ring.value += 1 / (int(mode.value) * 60)
+        progress_ring.value += 1 / (int(timer_time) * 60)
         progress_ring.update()
         pomodoro.rotate.angle += pi / 2
         pomodoro.update()
         time.sleep(progressionSpeed)
-        elapsed_time.value = round(int(int(mode.value) * 60 - (time.time() - start)) / 60, 1)
+        elapsed_time.value = f'{(int(timer_time)*60 - (time.time() - start)) / 60}'
         elapsed_time.update()
 
     def ringReset(mode):
@@ -26,8 +26,6 @@ def main(page: ft.Page):
         while progress_ring.value > 0:
             progress_ring.value -= i
             progress_ring.update()
-            elapsed_time.value = progress_ring.value
-            elapsed_time.update()
             time.sleep(0.01)
             i += 0.0001
         progress_ring.value = 0
@@ -46,66 +44,78 @@ def main(page: ft.Page):
         nonlocal working_loop
         nonlocal times_worked
 
-        try:
-            int(working_time.value)
-            pomodoro_button.disabled = True
+        pomodoro_button.disabled = True
 
-            if working_loop:
-                start = time.time()
-                WORKTIME = int(working_time.value) * 60
+        if working_loop:
+            start = time.time()
+            WORKTIME = int(work_time) * 60
+            pomodoro_button.text = "Помидор запущен"
+            pomodoro_button.update()
+            for i in range(WORKTIME + 1):
+                if isclose(progress_ring.value, 1):
+                    ringReset(mode='work')
+                else:
+                    ringProgression(1, work_time, start)
+        elif times_worked == 3:
+            start = time.time()
+            LONGCHILLTIME = int(longchill_time) * 60
+            pomodoro_button.text = "Длительный отдых запущен"
+            pomodoro_button.update()
+            for i in range(LONGCHILLTIME + 1):
+                if isclose(progress_ring.value, 1):
+                    ringReset(mode='longchill')
+                    times_worked = 0
+                else:
+                    ringProgression(1, longchill_time, start)
+        elif not working_loop:
+            start = time.time()
+            CHILLTIME = int(chill_time) * 60
+            pomodoro_button.text = "Отдых запущен"
+            pomodoro_button.update()
+            for i in range(CHILLTIME + 1):
+                if isclose(progress_ring.value, 1):
+                    ringReset(mode='chill')
+                    times_worked += 1
+                else:
+                    ringProgression(1, chill_time, start)
 
-                pomodoro_button.text = "Помидор запущен"
-                pomodoro_button.update()
+    def change_time_variable(e):
+        nonlocal work_time
+        nonlocal chill_time
+        nonlocal longchill_time
+        nonlocal minutes_on_slider
 
-                for i in range(WORKTIME + 1):
-                    if isclose(progress_ring.value, 1):
-                        ringReset(mode='work')
-                    else:
-                        ringProgression(1, working_time, start)
-            elif times_worked == 3:
-                start = time.time()
-                LONGCHILLTIME = int(long_chill_time.value) * 60
-
-                pomodoro_button.text = "Длительный отдых запущен"
-                pomodoro_button.update()
-
-                for i in range(LONGCHILLTIME + 1):
-                    if isclose(progress_ring.value, 1):
-                        ringReset(mode='longchill')
-                        times_worked = 0
-                    else:
-                        ringProgression(1, long_chill_time, start)
-
-            elif not working_loop:
-                start = time.time()
-                CHILLTIME = int(chill_time.value) * 60
-
-                pomodoro_button.text = "Отдых запущен"
-                pomodoro_button.update()
-
-                for i in range(CHILLTIME + 1):
-                    if isclose(progress_ring.value, 1):
-                        ringReset(mode='chill')
-                        times_worked += 1
-                    else:
-                        ringProgression(1, chill_time, start)
-        except ValueError:
-            open_dlg(e)
+        if dropdown_selector.value == 'work':
+            work_time = slider.value
+            minutes_on_slider.value = slider.value
+        elif dropdown_selector.value == 'chill':
+            chill_time = slider.value
+            minutes_on_slider.value = slider.value
+        else:
+            longchill_time = slider.value
+            minutes_on_slider.value = slider.value
+        minutes_on_slider.update()
 
 
+    def change_slider_value(e):
+        if dropdown_selector.value == 'work':
+            slider.value = work_time
+        elif dropdown_selector.value == 'chill':
+            slider.value = chill_time
+        else:
+            slider.value = longchill_time
+        minutes_on_slider.value = slider.value
+        minutes_on_slider.update()
+        slider.update()
+
+    page.fonts = {'Rodchenko': 'https://dropmefiles.com/xKKlG'}
+    work_time = 0
+    chill_time = 0
+    longchill_time = 0
     page.theme_mode = ft.ThemeMode.DARK
     page.title = 'Pomodoro Method'
     working_loop = True
     times_worked = 0
-
-    alert = ft.AlertDialog(
-        title=ft.Text('Некорректно введено поле'),
-            )
-
-    def open_dlg(e):
-        page.dialog = alert
-        alert.open = True
-        page.update()
 
     pomodoro = ft.Image(
         width=70,
@@ -151,39 +161,49 @@ def main(page: ft.Page):
         alignment=ft.alignment.center
     )
 
-    elapsed_time = ft.TextField(
-        value='0',
+    elapsed_time = ft.Text(
+        value='00:00',
         disabled=True,
-        width=100,
-        color=ft.colors.WHITE
+        color=ft.colors.WHITE,
+        scale=4,
+        font_family='Rodchenko',
+        right=time_container.width / 2 - 8,
+        bottom=time_container.height / 2
     )
 
-    elapsed_time_container = ft.Container(
-        content=elapsed_time,
-        gradient=ft.LinearGradient(
-            colors=[
-                "#250902",
-                "#38040e",
-                "#640d14",
-                "#800e13",
-                "#ad2831"
-            ],
-            begin=ft.alignment.top_left,
-            end=ft.alignment.bottom_center
-        ),
-        border_radius=10
+    timer = ft.Stack([
+        time_container,
+        elapsed_time
+    ])
+
+    slider = ft.Slider(
+        min=5, max=60,
+        divisions=11, scale=2,
+        on_change=change_time_variable)
+
+    worktime_option = ft.dropdown.Option(
+        text='Настройка времени работы', key='work'
+    )
+    chill_option = ft.dropdown.Option(
+        text='Настройка времени отдыха', key='chill'
+    )
+    longchill_option = ft.dropdown.Option(
+        text='Настройка времени продолжительного отдыха', key='longchill'
     )
 
-    working_time = ft.TextField(
-        hint_text="Введите время работы(в минутах)",
-        keyboard_type=ft.KeyboardType.NUMBER)
-    chill_time = ft.TextField(
-        hint_text='Введите время отдыха(в минутах)',
-        keyboard_type=ft.KeyboardType.NUMBER)
-    long_chill_time = ft.TextField(
-        hint_text='Введите время продолжительного отдыха(в минутах)',
-        keyboard_type=ft.KeyboardType.NUMBER)
+    minutes_on_slider = ft.Text(
+        value='0'
+    )
 
+    dropdown_selector = ft.Dropdown(
+        options=[
+            worktime_option,
+            chill_option,
+            longchill_option
+        ],
+        width=400,
+        on_change=change_slider_value
+    )
 
     minus = ft.IconButton(
         icon=ft.icons.EXPOSURE_MINUS_1_SHARP
@@ -232,16 +252,18 @@ def main(page: ft.Page):
         rail,
         ft.VerticalDivider(color='green'),
         ft.Column([
-            time_container,
+            timer,
             ft.Row([
-                pomodoro_button, elapsed_time_container, pomodoro
+                pomodoro_button, pomodoro
             ],
                 spacing=50
             ),
             pomodoro_stats,
-            working_time,
-            chill_time,
-            long_chill_time
+            ft.Row([
+                minutes_on_slider,
+                slider,
+            ], spacing=125),
+            dropdown_selector
         ])
     ],
         spacing=0,
