@@ -5,10 +5,10 @@ from math import isclose, pi
 from flet_core import RoundedRectangleBorder, Alignment
 
 
-def main(page: ft.Page):
+def main(main_page: ft.Page):
     def ringProgression(progressionSpeed, timer_time, start):
-        minutes = '{:02d}'.format(round(timer_time * 60 - (time.time() - start))//60)
-        seconds = '{:02d}'.format(round((timer_time*60 - (time.time() - start))%60))
+        minutes = '{:02d}'.format(round(timer_time * 60 - (time.time() - start)) // 60)
+        seconds = '{:02d}'.format(round((timer_time * 60 - (time.time() - start)) % 60))
         progress_ring.color = ft.colors.WHITE
         progress_ring.value += 1 / (int(timer_time) * 60)
         progress_ring.update()
@@ -20,9 +20,10 @@ def main(page: ft.Page):
 
     def ringReset(mode):
         nonlocal working_loop
-        nonlocal times_worked
+        nonlocal times_till_longchill
 
-        page.add(audio1)
+        audio1.seek(0)
+        audio1.resume()
         audio1.update()
 
         i = 0.001
@@ -40,22 +41,40 @@ def main(page: ft.Page):
             case 'chill':
                 pomodoro_button.text = 'Начать работу'
             case 'work':
-                pomodoro_button.text = 'Начать отдых' if times_worked != 3 else "Начать продолжительный отдых"
+                pomodoro_button.text = 'Начать отдых' if times_till_longchill != 3 else "Начать продолжительный отдых"
             case 'longchill':
                 pomodoro_button.text = 'Начать работу'
         pomodoro_button.update()
+        slider.disabled = False
+        slider.update()
 
     def buttonProgressionStart(e):
         nonlocal working_loop
+        nonlocal times_till_longchill
         nonlocal times_worked
 
         try:
+            1 / slider.value
+        except TypeError or ZeroDivisionError:
+            print('Caught!')
+            main_page.add(ft.AlertDialog(
+                content=ft.Text(
+                    value='Не задано значение времени работы'
+                )
+            ))
+            main_page.update()
+            return 0
+
+        try:
+            main_page.add(audio1)
             audio1.pause()
-            audio1.update()
+
         except AttributeError:
             pass
 
         pomodoro_button.disabled = True
+        slider.disabled = True
+        slider.update()
 
         if working_loop:
             start = time.time()
@@ -66,8 +85,8 @@ def main(page: ft.Page):
                 if isclose(progress_ring.value, 1):
                     ringReset(mode='work')
                 else:
-                    ringProgression(0.01, work_time, start)
-        elif times_worked == 3:
+                    ringProgression(1, work_time, start)
+        elif times_till_longchill == 3:
             start = time.time()
             LONGCHILLTIME = int(longchill_time) * 60
             pomodoro_button.text = "Длительный отдых запущен"
@@ -75,7 +94,7 @@ def main(page: ft.Page):
             for i in range(LONGCHILLTIME + 1):
                 if isclose(progress_ring.value, 1):
                     ringReset(mode='longchill')
-                    times_worked = 0
+                    times_till_longchill = 0
                 else:
                     ringProgression(1, longchill_time, start)
         elif not working_loop:
@@ -86,9 +105,12 @@ def main(page: ft.Page):
             for i in range(CHILLTIME + 1):
                 if isclose(progress_ring.value, 1):
                     ringReset(mode='chill')
+                    times_till_longchill += 1
                     times_worked += 1
+                    pomodoro_stats.controls[1].value = f"Помидоров пройдено: {times_worked}"
+                    pomodoro_stats.update()
                 else:
-                    ringProgression(1, chill_time, start)
+                    ringProgression(0.01, chill_time, start)
 
     def change_time_variable(e):
         nonlocal work_time
@@ -118,17 +140,27 @@ def main(page: ft.Page):
         minutes_on_slider.update()
         slider.update()
 
-    page.fonts = {'Rodchenko': 'https://dropmefiles.com/xKKlG'}
-    work_time = 0
-    chill_time = 0
-    longchill_time = 0
-    page.theme_mode = ft.ThemeMode.DARK
-    page.title = 'Pomodoro Method'
+    main_page.fonts = {'Rodchenko': 'https://dropmefiles.com/xKKlG'}
+    work_time = 5
+    chill_time = 5
+    longchill_time = 5
+    main_page.theme_mode = ft.ThemeMode.DARK
+    main_page.title = 'Pomodoro Method'
     working_loop = True
+    times_till_longchill = 0
     times_worked = 0
 
+    def route_change(route):
+        main_page.views.append(
+            ft.View(
+                '/',
+                [main_content]
+            )
+        )
+
+
     audio1 = ft.Audio(
-        src="https://luan.xyz/files/audio/ambient_c_motion.mp3", autoplay=True
+        src="https://luan.xyz/files/audio/ambient_c_motion.mp3"
     )
 
     pomodoro = ft.Image(
@@ -230,19 +262,23 @@ def main(page: ft.Page):
     )
 
     pomodoro_stats = ft.Row([
-        ft.Column([
-            ft.Row([
-                minus,
-                ft.TextField(value='Помидоров пройдено: '),
-                plus
-            ])
-        ])
+        minus,
+        ft.TextField(value='Помидоров пройдено: '),
+        plus
     ])
+
+    task_button = ft.IconButton(icon=ft.icons.EXPOSURE_PLUS_1)
+
 
     main_content = ft.Row([
         ft.Column([
-            timer,
-            ft.VerticalDivider(color='green'),
+            ft.Row([
+                timer,
+                ft.VerticalDivider(),
+            ],
+                spacing=70
+            ),
+
             ft.Row([
                 pomodoro_button, pomodoro
             ],
@@ -253,12 +289,13 @@ def main(page: ft.Page):
                 minutes_on_slider,
                 slider,
             ], spacing=125),
-            dropdown_selector
+            dropdown_selector,
+
         ])
     ],
         spacing=0,
     )
 
-    page.add(main_content)
+    route_change('/')
 
 ft.app(target=main)
