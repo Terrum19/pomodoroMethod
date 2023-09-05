@@ -1,4 +1,5 @@
 import flet as ft
+import json
 
 class Todo_menu(ft.UserControl):
     def build(self):
@@ -22,8 +23,6 @@ class Todo_menu(ft.UserControl):
             self.task_column
         ])
 
-
-
         return self.todo_menu
 
     def task_delete(self, task):
@@ -31,6 +30,14 @@ class Todo_menu(ft.UserControl):
         self.update()
 
     def add_task(self, e):
+        if self.task_text_field.value not in open("todo_time_spent.json").read():
+            print(json.loads(open("todo_time_spent.json").read()))
+            overwrite_json = json.loads(open("todo_time_spent.json").read())
+            overwrite_json.append({self.task_text_field.value: [{"time_spent_on_task": 0}, {"is_activated": False}]})
+            overwrite_json = json.dumps(overwrite_json)
+            open('todo_time_spent.json', 'w').write(overwrite_json)
+
+
         if self.task_text_field.value != '':
             task = Task(self.task_text_field.value, self.task_delete)
             self.task_column.controls.append(task)
@@ -93,6 +100,7 @@ class Task(ft.UserControl):
         self.update()
 
     def save_clicked(self, e):
+        print(open('todo_time_spent.json').read().find())
         self.checkbox.label = self.edit_name.value
         self.task_view.visible = True
         self.task_edit.visible = False
