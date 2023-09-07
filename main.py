@@ -10,15 +10,18 @@ JSON_FILE_PATH = f'{getcwd()}\\todo_time_spent.json'
 if not exists(JSON_FILE_PATH):
     todo_time_spent = open("todo_time_spent.json", 'w')
     todo_time_spent.write('[]')
+elif open('todo_time_spent.json').read() == '':
+    open('todo_time_spent.json', 'w').write('[]')
 
 
 def main(page: ft.Page):
     def json_tasks_load():
         for line in json.loads(open('todo_time_spent.json').read()):
-            task_name = list(line.keys())[0]
-            print(todo.todo_menu.controls)
-            todo.todo_menu.controls[1].controls.append(Task(task_name, todo.task_delete))
-            todo.update()
+            if line[list(line.keys())[0]]['will_render'] == True:
+                task_name = list(line.keys())[0]
+                checked = line[task_name]['is_activated']
+                todo.todo_menu.controls[1].controls.append(Task(task_name, todo.task_delete, checked))
+                todo.update()
 
     page.theme_mode = ft.ThemeMode.DARK
 

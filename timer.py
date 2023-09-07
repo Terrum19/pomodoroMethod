@@ -2,6 +2,7 @@ import flet as ft
 from flet_core import RoundedRectangleBorder, Alignment
 import time
 from math import isclose, pi
+import json
 
 class pomodoro_part(ft.UserControl):
     def build(self):
@@ -190,6 +191,10 @@ class pomodoro_part(ft.UserControl):
         self.slider.update()
         is_audio_added = False
 
+        json_config = json.loads(open('todo_time_spent.json').read())
+        task_list = [list(element.keys())[0] for element in json_config
+                     if element[list(element.keys())[0]]['is_activated']]
+
         if not is_audio_added:
             self.main_content.controls.append(self.audio1)
             self.main_content.update()
@@ -200,6 +205,7 @@ class pomodoro_part(ft.UserControl):
         if self.working_loop:
             start = time.time()
             WORKTIME = int(self.work_time) * 60
+            self.json_task_time_adder(task_list, self.work_time)
             self.pomodoro_button.text = "Помидор запущен"
             self.pomodoro_button.update()
             for i in range(WORKTIME + 1):
@@ -211,6 +217,7 @@ class pomodoro_part(ft.UserControl):
         elif self.times_till_longchill == 3:
             start = time.time()
             LONGCHILLTIME = int(self.longchill_time) * 60
+            self.json_task_time_adder(task_list, self.longchill_time)
             self.pomodoro_button.text = "Длительный отдых запущен"
             self.pomodoro_button.update()
             for i in range(LONGCHILLTIME + 1):
@@ -222,6 +229,7 @@ class pomodoro_part(ft.UserControl):
         elif not self.working_loop:
             start = time.time()
             CHILLTIME = int(self.chill_time) * 60
+            self.json_task_time_adder(task_list, self.chill_time)
             self.pomodoro_button.text = "Отдых запущен"
             self.pomodoro_button.update()
             for i in range(CHILLTIME + 1):
@@ -233,6 +241,7 @@ class pomodoro_part(ft.UserControl):
                     self.pomodoro_stats.update()
                 else:
                     self.ringProgression(0.01, self.chill_time, start)
+
 
     def change_time_variable(self, e):
         if self.dropdown_selector.value == 'work':
@@ -256,3 +265,11 @@ class pomodoro_part(ft.UserControl):
         self.minutes_on_slider.value = self.slider.value
         self.minutes_on_slider.update()
         self.slider.update()
+
+
+    def json_task_time_adder(self, task_list, time_to_add):
+        json_changed = json.loads(open('todo_time_spent.json').read())
+        for task in json_changed:
+            if list(task.keys())[0] in task_list:
+                task[list(task.keys())[0]]['time_spent_on_task'] += time_to_add
+        open('todo_time_spent.json', 'w').write(json.dumps(json_changed))
