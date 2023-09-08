@@ -6,13 +6,13 @@ from os.path import exists
 from timer import pomodoro_part
 from todoapp import Todo_menu, Task
 
+
 JSON_FILE_PATH = f'{getcwd()}\\todo_time_spent.json'
 if not exists(JSON_FILE_PATH):
     todo_time_spent = open("todo_time_spent.json", 'w')
     todo_time_spent.write('[]')
 elif open('todo_time_spent.json').read() == '':
     open('todo_time_spent.json', 'w').write('[]')
-
 
 def main(page: ft.Page):
     def json_tasks_load():
@@ -29,9 +29,5 @@ def main(page: ft.Page):
     todo = Todo_menu()
 
     page.add(ft.Row([timer_app, todo]))
-
     json_tasks_load()
-
-
-
 ft.app(target=main)

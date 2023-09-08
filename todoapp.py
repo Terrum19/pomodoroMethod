@@ -1,50 +1,77 @@
+import time
+
 import flet as ft
 import json
 import re
+import asyncio
 
 
 class Todo_menu(ft.UserControl):
     def build(self):
         self.task_text_field = ft.TextField(
-            hint_text='Добавьте таск: '
+            hint_text='Добавьте таск: ',
         )
 
         self.add_task_button = ft.FloatingActionButton(
             icon=ft.icons.ADD, on_click=self.add_task, bgcolor=ft.colors.LIME_300
         )
 
+        self.update_button = ft.IconButton(
+            icon=ft.icons.UPDATE,
+            on_click=self.time_spent_updater
+        )
+
         self.field_for_task_adding = ft.Row([
             self.task_text_field,
+            self.update_button,
             self.add_task_button
         ])
 
         self.task_column = ft.Column()
+        self.passed_time_column = ft.Column()
 
         self.todo_menu = ft.Column([
-            ft.Row([self.field_for_task_adding,
-                    ft.Column([])]),
-            self.task_column
+            self.field_for_task_adding,
+            self.task_column,
         ])
 
-        return self.todo_menu
+        self.full_menu = ft.Row([
+            self.todo_menu,
+            self.passed_time_column
+        ])
+
+        return self.full_menu
 
     def task_delete(self, task):
         self.task_column.controls.remove(task)
         self.update()
 
     def add_task(self, e):
-        if self.task_text_field.value not in [list(elem.keys())[0] for elem in json.loads(open('todo_time_spent.json').read())] and self.task_text_field.value:
+        if self.task_text_field.value not in [list(elem.keys())[0] for elem in json.loads(
+                open('todo_time_spent.json').read())] and self.task_text_field.value:
             overwrite_json = json.loads(open("todo_time_spent.json").read())
             overwrite_json.append(
                 {self.task_text_field.value: {"time_spent_on_task": 0, "is_activated": False, "will_render": True}})
             overwrite_json = json.dumps(overwrite_json)
             open('todo_time_spent.json', 'w').write(overwrite_json)
-            task = Task(self.task_text_field.value, self.task_delete)
+            task = Task(self.task_text_field.value, self.task_delete, False)
             self.task_column.controls.append(task)
             self.task_text_field.value = ''
             self.todo_menu.update()
         else:
             self.page.add(ft.SnackBar(ft.Text('Строка пуста или такое задание уже добавлено!'), open=True))
+
+    def time_spent_updater(self, e):
+        self.passed_time_column.clean()
+        json_changed = json.loads(open('todo_time_spent.json').read())
+        for task in json_changed:
+            hours = task[list(task.keys())[0]]["time_spent_on_task"] // 60 // 60
+            minutes = (task[list(task.keys())[0]]["time_spent_on_task"] - hours * 60 * 60) // 60
+            seconds = task[list(task.keys())[0]]["time_spent_on_task"] - hours * 60 * 60 - minutes * 60
+            if task[list(task.keys())[0]]['will_render'] and task[list(task.keys())[0]]:
+                self.passed_time_column.controls.append(
+                    ft.Text(value=f'{list(task.keys())[0]} = {hours} часов, {minutes} минут, {seconds} секунд'))
+                self.passed_time_column.update()
 
 
 class Task(ft.UserControl):
@@ -55,7 +82,8 @@ class Task(ft.UserControl):
         self.is_active = is_active
 
     def build(self):
-        self.checkbox = ft.Checkbox(value=True if self.is_active else False, label=self.task_name, on_change=self.checkbox_state_change)
+        self.checkbox = ft.Checkbox(value=True if self.is_active else False, label=self.task_name,
+                                    on_change=self.checkbox_state_change)
         self.edit_name = ft.TextField(hint_text='Что надо изменить?')
 
         self.edit_button = ft.FilledButton(
@@ -123,9 +151,3 @@ class Task(ft.UserControl):
             if list(task.keys())[0] == self.task_name:
                 task[self.task_name]['is_activated'] = True if self.checkbox.value else False
         open('todo_time_spent.json', 'w').write(json.dumps(json_changed))
-
-    def time_spent_updater(self):
-        json_changed = json.loads(open('todo_time_spent.json').read())
-        for task in json_changed:
-            if task[list(task.keys())[0]]['will_render'] and s:
-                Todo_menu.controls[0][1]
