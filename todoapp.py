@@ -16,31 +16,19 @@ class Todo_menu(ft.UserControl):
             icon=ft.icons.ADD, on_click=self.add_task, bgcolor=ft.colors.LIME_300
         )
 
-        self.update_button = ft.IconButton(
-            icon=ft.icons.UPDATE,
-            on_click=self.time_spent_updater
-        )
-
         self.field_for_task_adding = ft.Row([
             self.task_text_field,
-            self.update_button,
             self.add_task_button
         ])
 
         self.task_column = ft.Column()
-        self.passed_time_column = ft.Column()
 
         self.todo_menu = ft.Column([
             self.field_for_task_adding,
             self.task_column,
         ])
 
-        self.full_menu = ft.Row([
-            self.todo_menu,
-            self.passed_time_column
-        ])
-
-        return self.full_menu
+        return self.todo_menu
 
     def task_delete(self, task):
         self.task_column.controls.remove(task)
@@ -60,18 +48,6 @@ class Todo_menu(ft.UserControl):
             self.todo_menu.update()
         else:
             self.page.add(ft.SnackBar(ft.Text('Строка пуста или такое задание уже добавлено!'), open=True))
-
-    def time_spent_updater(self, e):
-        self.passed_time_column.clean()
-        json_changed = json.loads(open('todo_time_spent.json').read())
-        for task in json_changed:
-            hours = task[list(task.keys())[0]]["time_spent_on_task"] // 60 // 60
-            minutes = (task[list(task.keys())[0]]["time_spent_on_task"] - hours * 60 * 60) // 60
-            seconds = task[list(task.keys())[0]]["time_spent_on_task"] - hours * 60 * 60 - minutes * 60
-            if task[list(task.keys())[0]]['will_render'] and task[list(task.keys())[0]]:
-                self.passed_time_column.controls.append(
-                    ft.Text(value=f'{list(task.keys())[0]} = {hours} часов, {minutes} минут, {seconds} секунд'))
-                self.passed_time_column.update()
 
 
 class Task(ft.UserControl):

@@ -133,6 +133,8 @@ class pomodoro_part(ft.UserControl):
             self.plus
         ])
 
+        self.passed_time_column = ft.Column()
+
         self.main_content = ft.Row([
             ft.Column([
                 ft.Row([
@@ -148,12 +150,25 @@ class pomodoro_part(ft.UserControl):
                     self.slider,
                 ], spacing=125),
                 self.dropdown_selector,
+                self.passed_time_column
             ]),
         ],
             spacing=0,
         )
 
         return self.main_content
+
+    def time_spent_updater(self):
+        self.passed_time_column.clean()
+        json_changed = json.loads(open('todo_time_spent.json').read())
+        for task in json_changed:
+            hours = task[list(task.keys())[0]]["time_spent_on_task"] // 60 // 60
+            minutes = (task[list(task.keys())[0]]["time_spent_on_task"] - hours * 60 * 60) // 60
+            seconds = task[list(task.keys())[0]]["time_spent_on_task"] - hours * 60 * 60 - minutes * 60
+            if task[list(task.keys())[0]]['will_render'] and task[list(task.keys())[0]]:
+                self.passed_time_column.controls.append(
+                    ft.Text(value=f'{list(task.keys())[0]} = {hours} часов, {minutes} минут, {seconds} секунд'))
+                self.passed_time_column.update()
 
     def ringProgression(self, progressionSpeed, timer_time, start):
         minutes = '{:02d}'.format(round(timer_time * 60 - (time.time() - start)) // 60)
@@ -163,6 +178,7 @@ class pomodoro_part(ft.UserControl):
         self.progress_ring.update()
         self.pomodoro.rotate.angle += pi / 2
         self.pomodoro.update()
+        self.time_spent_updater()
         time.sleep(progressionSpeed)
         self.json_task_time_adder(task_list=self.task_list, time_to_add=1)
         self.elapsed_time.value = f"{minutes}:{seconds}"
