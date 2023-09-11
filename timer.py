@@ -17,8 +17,7 @@ class pomodoro_part(ft.UserControl):
         self.mode = 'work'
         self.reset_state = True
         self.json_config = json.loads(open('todo_time_spent.json').read())
-        self.task_list = [list(element.keys())[0] for element in self.json_config
-                     if element[list(element.keys())[0]]['is_activated']]
+
 
         self.audio1 = ft.Audio(
             src="https://luan.xyz/files/audio/ambient_c_motion.mp3"
@@ -159,20 +158,27 @@ class pomodoro_part(ft.UserControl):
         return self.main_content
 
     def time_spent_updater(self):
-        self.passed_time_column.clean()
         json_changed = json.loads(open('todo_time_spent.json').read())
         for task in json_changed:
             hours = task[list(task.keys())[0]]["time_spent_on_task"] // 60 // 60
             minutes = (task[list(task.keys())[0]]["time_spent_on_task"] - hours * 60 * 60) // 60
             seconds = task[list(task.keys())[0]]["time_spent_on_task"] - hours * 60 * 60 - minutes * 60
-            if task[list(task.keys())[0]]['will_render'] and task[list(task.keys())[0]]:
-                self.passed_time_column.controls.append(
-                    ft.Text(value=f'{list(task.keys())[0]} = {hours} часов, {minutes} минут, {seconds} секунд'))
-                self.passed_time_column.update()
+            if task[list(task.keys())[0]]['will_render'] and task[list(task.keys())[0]] and task[list(task.keys())[0]]['is_activated']:
+                if True not in [list(task.keys())[0] in text.value for text in self.passed_time_column.controls]:
+                    self.passed_time_column.controls.append(
+                        ft.Text(value=f'{list(task.keys())[0]} = {hours} часов, {minutes} минут, {seconds} секунд'))
+                else:
+                    for text in self.passed_time_column.controls:
+                        if list(task.keys())[0] in text.value:
+                            text.value = f'{list(task.keys())[0]} = {hours} часов, {minutes} минут, {seconds} секунд'
+            self.passed_time_column.update()
 
     def ringProgression(self, progressionSpeed, timer_time, start):
         minutes = '{:02d}'.format(round(timer_time * 60 - (time.time() - start)) // 60)
         seconds = '{:02d}'.format(round((timer_time * 60 - (time.time() - start)) % 60))
+        task_list = [list(element.keys())[0] for element in json.loads(open('todo_time_spent.json').read()) if element[list(element.keys())[0]]['is_activated']]
+        print(json.loads(open('todo_time_spent.json').read())[-1]['Добавление телеграм бота для оповещения'])
+        print(task_list)
         self.progress_ring.color = ft.colors.WHITE
         self.progress_ring.value += 1 / (int(timer_time) * 60)
         self.progress_ring.update()
@@ -180,7 +186,7 @@ class pomodoro_part(ft.UserControl):
         self.pomodoro.update()
         self.time_spent_updater()
         time.sleep(progressionSpeed)
-        self.json_task_time_adder(task_list=self.task_list, time_to_add=1)
+        self.json_task_time_adder(task_list=task_list, time_to_add=1)
         self.elapsed_time.value = f"{minutes}:{seconds}"
         self.elapsed_time.update()
 
