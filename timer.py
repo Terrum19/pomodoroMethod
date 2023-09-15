@@ -177,8 +177,6 @@ class pomodoro_part(ft.UserControl):
         minutes = '{:02d}'.format(round(timer_time * 60 - (time.time() - start)) // 60)
         seconds = '{:02d}'.format(round((timer_time * 60 - (time.time() - start)) % 60))
         task_list = [list(element.keys())[0] for element in json.loads(open('todo_time_spent.json').read()) if element[list(element.keys())[0]]['is_activated']]
-        print(json.loads(open('todo_time_spent.json').read())[-1]['Добавление телеграм бота для оповещения'])
-        print(task_list)
         self.progress_ring.color = ft.colors.WHITE
         self.progress_ring.value += 1 / (int(timer_time) * 60)
         self.progress_ring.update()

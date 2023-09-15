@@ -1,15 +1,15 @@
+import random
 import time
 
 import flet as ft
 import json
-import re
-import asyncio
+import random
 
 
 class Todo_menu(ft.UserControl):
     def build(self):
         self.task_text_field = ft.TextField(
-            hint_text='Добавьте таск: ',
+            hint_text='Добавьте таск: '
         )
 
         self.add_task_button = ft.FloatingActionButton(
@@ -37,12 +37,12 @@ class Todo_menu(ft.UserControl):
     def add_task(self, e):
         if self.task_text_field.value not in [list(elem.keys())[0] for elem in json.loads(
                 open('todo_time_spent.json').read())] and self.task_text_field.value:
+            task = Task(self.task_text_field.value, self.task_delete, False)
             overwrite_json = json.loads(open("todo_time_spent.json").read())
-            overwrite_json.append(
-                {self.task_text_field.value: {"time_spent_on_task": 0, "is_activated": False, "will_render": True}})
+            overwrite_json.append({self.task_text_field.value:
+                                       {"time_spent_on_task": 0, "is_activated": False, "will_render": True}})
             overwrite_json = json.dumps(overwrite_json)
             open('todo_time_spent.json', 'w').write(overwrite_json)
-            task = Task(self.task_text_field.value, self.task_delete, False)
             self.task_column.controls.append(task)
             self.task_text_field.value = ''
             self.todo_menu.update()
@@ -107,6 +107,15 @@ class Task(ft.UserControl):
         self.update()
 
     def save_clicked(self, e):
+        json_changed = json.loads(open('todo_time_spent.json').read())
+        json_replacer = []
+        for task in json_changed:
+            if list(task.keys())[0] == self.task_name:
+                replace = {self.task_name: self.edit_name.value}
+                json_replacer.append(dict((replace[key], value) for (key, value) in task.items()))
+            else:
+                json_replacer.append(task)
+        open('todo_time_spent.json', 'w').write(json.dumps(json_replacer))
         self.checkbox.label = self.edit_name.value
         self.task_view.visible = True
         self.task_edit.visible = False
@@ -127,3 +136,4 @@ class Task(ft.UserControl):
             if list(task.keys())[0] == self.task_name:
                 task[self.task_name]['is_activated'] = True if self.checkbox.value else False
         open('todo_time_spent.json', 'w').write(json.dumps(json_changed))
+
