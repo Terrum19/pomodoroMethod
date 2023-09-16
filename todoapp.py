@@ -1,12 +1,7 @@
-import random
-import time
-
 import flet as ft
 import json
-import random
 
-
-class Todo_menu(ft.UserControl):
+class TodoMenu(ft.UserControl):
     def build(self):
         self.task_text_field = ft.TextField(
             hint_text='Добавьте таск: '
@@ -30,10 +25,15 @@ class Todo_menu(ft.UserControl):
 
         return self.todo_menu
 
+    # A function that deletes task from task list
     def task_delete(self, task):
         self.task_column.controls.remove(task)
         self.update()
 
+    """
+    A function that adds a task to JSON andon the screen if it has 
+    unique name and the task add field is not empty
+    """
     def add_task(self, e):
         if self.task_text_field.value not in [list(elem.keys())[0] for elem in json.loads(
                 open('todo_time_spent.json').read())] and self.task_text_field.value:
@@ -100,27 +100,43 @@ class Task(ft.UserControl):
 
         return self.task
 
+    """
+    A function that changes task view to edit field
+    with save button
+    """
     def edit_clicked(self, e):
         self.edit_name.value = self.task_name
         self.task_view.visible = False
         self.task_edit.visible = True
         self.update()
 
+
+    """
+    A function that saves changes in the name of the task
+    if they are unique and adds them into JSON
+    """
     def save_clicked(self, e):
         json_changed = json.loads(open('todo_time_spent.json').read())
-        json_replacer = []
-        for task in json_changed:
-            if list(task.keys())[0] == self.task_name:
-                replace = {self.task_name: self.edit_name.value}
-                json_replacer.append(dict((replace[key], value) for (key, value) in task.items()))
-            else:
-                json_replacer.append(task)
-        open('todo_time_spent.json', 'w').write(json.dumps(json_replacer))
-        self.checkbox.label = self.edit_name.value
-        self.task_view.visible = True
-        self.task_edit.visible = False
-        self.update()
+        if self.edit_name.value not in [list(task.keys())[0] for task in json_changed] and self.edit_name.value != '':
+            json_replacer = []
+            for task in json_changed:
+                if list(task.keys())[0] == self.task_name:
+                    replace = {self.task_name: self.edit_name.value}
+                    json_replacer.append(dict((replace[key], value) for (key, value) in task.items()))
+                else:
+                    json_replacer.append(task)
+            open('todo_time_spent.json', 'w').write(json.dumps(json_replacer))
+            self.checkbox.label = self.edit_name.value
+            self.task_view.visible = True
+            self.task_edit.visible = False
+            self.update()
+        else:
+            self.page.add(ft.SnackBar(ft.Text('Строка пуста или такое задание уже добавлено!'), open=True))
 
+    """
+    A function that is called when delete button is clicked.
+    Disables task visibility and writes changes into JSON
+    """
     def delete_clicked(self, e):
         json_changed = json.loads(open('todo_time_spent.json').read())
         for task in json_changed:
@@ -130,6 +146,10 @@ class Task(ft.UserControl):
         self.visible = False
         self.update()
 
+    """
+    A function that called on checkbox change.
+    Writes current state of checkbox to JSON 
+    """
     def checkbox_state_change(self, e):
         json_changed = json.loads(open('todo_time_spent.json').read())
         for task in json_changed:

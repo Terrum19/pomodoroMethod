@@ -5,12 +5,12 @@ from math import isclose, pi
 import json
 
 
-class pomodoro_part(ft.UserControl):
+class PomodoroPart(ft.UserControl):
     def build(self):
-        self.work_time = 5
-        self.chill_time = 5
-        self.longchill_time = 5
-        self.working_loop = True
+        self.work_time = 5  # Default work time
+        self.chill_time = 5  # Default chill time
+        self.longchill_time = 5  # Default long chill time
+        self.working_loop = True  # Tells if current loop is working loop
         self.times_till_longchill = 0
         self.times_worked = 0
         self.is_audio_added = False
@@ -26,7 +26,7 @@ class pomodoro_part(ft.UserControl):
         self.pomodoro_button = ft.ElevatedButton(
             text="Запустить помидор",
             autofocus=True,
-            on_click=self.buttonProgressionStart,
+            on_click=self.button_progression_start,
             style=ft.ButtonStyle(
                 shape={
                     ft.MaterialState.HOVERED: RoundedRectangleBorder(radius=20),
@@ -87,7 +87,7 @@ class pomodoro_part(ft.UserControl):
             self.pomodoro
         ])
 
-        self.slider = ft.Slider(
+        self.time_slider = ft.Slider(
             min=5, max=60,
             divisions=11, scale=2,
             on_change=self.change_time_variable)
@@ -146,7 +146,7 @@ class pomodoro_part(ft.UserControl):
                 self.pomodoro_stats,
                 ft.Row([
                     self.minutes_on_slider,
-                    self.slider,
+                    self.time_slider,
                 ], spacing=125),
                 self.dropdown_selector,
                 self.passed_time_column
@@ -157,6 +157,9 @@ class pomodoro_part(ft.UserControl):
 
         return self.main_content
 
+    """
+    A function that updates labels with time that been spent on task.    
+    """
     def time_spent_updater(self):
         json_changed = json.loads(open('todo_time_spent.json').read())
         for task in json_changed:
@@ -173,7 +176,11 @@ class pomodoro_part(ft.UserControl):
                             text.value = f'{list(task.keys())[0]} = {hours} часов, {minutes} минут, {seconds} секунд'
             self.passed_time_column.update()
 
-    def ringProgression(self, progressionSpeed, timer_time, start):
+    """
+    A function that adds a bit of progress to the progress ring. 
+    Also updates elapsed time and rotates Pomodor Icon
+    """
+    def ring_progression(self, progression_speed, timer_time, start):
         minutes = '{:02d}'.format(round(timer_time * 60 - (time.time() - start)) // 60)
         seconds = '{:02d}'.format(round((timer_time * 60 - (time.time() - start)) % 60))
         task_list = [list(element.keys())[0] for element in json.loads(open('todo_time_spent.json').read()) if element[list(element.keys())[0]]['is_activated']]
@@ -183,12 +190,16 @@ class pomodoro_part(ft.UserControl):
         self.pomodoro.rotate.angle += pi / 2
         self.pomodoro.update()
         self.time_spent_updater()
-        time.sleep(progressionSpeed)
+        time.sleep(progression_speed)
         self.json_task_time_adder(task_list=task_list, time_to_add=1)
         self.elapsed_time.value = f"{minutes}:{seconds}"
         self.elapsed_time.update()
 
-    def ringReset(self, mode):
+    """
+    A function that sets ring to a starting state(empty progress ring).
+    Also sets current work mode and starts playing music, to show that a pomodoro has passed.
+    """
+    def ring_reset(self, mode):
         self.main_content.controls[1].seek(0)
         self.main_content.controls[1].play()
 
@@ -211,13 +222,18 @@ class pomodoro_part(ft.UserControl):
             case 'longchill':
                 self.pomodoro_button.text = 'Начать работу'
         self.pomodoro_button.update()
-        self.slider.disabled = False
-        self.slider.update()
+        self.time_slider.disabled = False
+        self.time_slider.update()
 
-    def buttonProgressionStart(self, e):
-        self.slider.disabled = True
+    """
+    A function that is called when start button is pressed.
+    Adds audio to the page, and works differently with 
+    different work modes.
+    """
+    def button_progression_start(self, e):
+        self.time_slider.disabled = True
         self.reset_state = True if not self.reset_state else False
-        self.slider.update()
+        self.time_slider.update()
 
         if not self.is_audio_added:
             self.main_content.controls.append(self.audio1)
@@ -235,12 +251,12 @@ class pomodoro_part(ft.UserControl):
             self.pomodoro_button.update()
             for i in range(WORKTIME + 1):
                 if isclose(self.progress_ring.value, 1):
-                    self.ringReset('work')
+                    self.ring_reset('work')
                 elif self.reset_state:
-                    self.ringReset('chill')
+                    self.ring_reset('chill')
                     return
                 else:
-                    self.ringProgression(1, self.work_time, start)
+                    self.ring_progression(1, self.work_time, start)
         elif self.times_till_longchill == 3:
             start = time.time()
             self.pomodoro_button.disabled = True
@@ -250,10 +266,10 @@ class pomodoro_part(ft.UserControl):
             self.pomodoro_button.update()
             for i in range(LONGCHILLTIME + 1):
                 if isclose(self.progress_ring.value, 1):
-                    self.ringReset('longchill')
+                    self.ring_reset('longchill')
                     self.times_till_longchill = 0
                 else:
-                    self.ringProgression(1, self.longchill_time, start)
+                    self.ring_progression(1, self.longchill_time, start)
         elif not self.working_loop:
             start = time.time()
             CHILLTIME = int(self.chill_time) * 60
@@ -263,37 +279,48 @@ class pomodoro_part(ft.UserControl):
             self.pomodoro_button.update()
             for i in range(CHILLTIME + 1):
                 if isclose(self.progress_ring.value, 1):
-                    self.ringReset('chill')
+                    self.ring_reset('chill')
                     self.times_till_longchill += 1
                     self.times_worked += 1
                     self.pomodoro_stats.controls[1].value = f"Помидоров пройдено: {self.times_worked}"
                     self.pomodoro_stats.update()
                 else:
-                    self.ringProgression(1, self.chill_time, start)
+                    self.ring_progression(1, self.chill_time, start)
 
+    """
+    A function that allows user to configure their time of 
+    work, chill and longchill with slider
+    """
     def change_time_variable(self, e):
         if self.dropdown_selector.value == 'work':
-            self.work_time = self.slider.value
-            self.minutes_on_slider.value = self.slider.value
+            self.work_time = self.time_slider.value
+            self.minutes_on_slider.value = self.time_slider.value
         elif self.dropdown_selector.value == 'chill':
-            self.chill_time = self.slider.value
-            self.minutes_on_slider.value = self.slider.value
+            self.chill_time = self.time_slider.value
+            self.minutes_on_slider.value = self.time_slider.value
         else:
-            self.longchill_time = self.slider.value
-            self.minutes_on_slider.value = self.slider.value
+            self.longchill_time = self.time_slider.value
+            self.minutes_on_slider.value = self.time_slider.value
         self.minutes_on_slider.update()
 
+    """
+    A function that sets slider to a position of chosen time when 
+    dropdown selector of time modes had changed
+    """
     def change_slider_value(self, e):
         if self.dropdown_selector.value == 'work':
-            self.slider.value = self.work_time
+            self.time_slider.value = self.work_time
         elif self.dropdown_selector.value == 'chill':
-            self.slider.value = self.chill_time
+            self.time_slider.value = self.chill_time
         else:
-            self.slider.value = self.longchill_time
-        self.minutes_on_slider.value = self.slider.value
+            self.time_slider.value = self.longchill_time
+        self.minutes_on_slider.value = self.time_slider.value
         self.minutes_on_slider.update()
-        self.slider.update()
+        self.time_slider.update()
 
+    """
+    Adds time to task's passed time and changes time spent on task in JSON
+    """
     def json_task_time_adder(self, task_list, time_to_add):
         json_changed = json.loads(open('todo_time_spent.json').read())
         for task in json_changed:
