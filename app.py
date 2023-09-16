@@ -23,12 +23,13 @@ def main(page: ft.Page):
     and adds them on the screen
     """
     def json_tasks_load():
-        for line in json.loads(open('todo_time_spent.json').read()):
-            if line[list(line.keys())[0]]['will_render'] == True:
-                task_name = list(line.keys())[0]
-                checked = line[task_name]['is_activated']
-                todo.todo_menu.controls[1].controls.append(Task(task_name, todo.task_delete, checked))
-                todo.update()
+        if json.loads(open('todo_time_spent.json').read()):
+            for line in json.loads(open('todo_time_spent.json').read()):
+                if line[list(line.keys())[0]]['will_render'] == True:
+                    task_name = list(line.keys())[0]
+                    checked = line[task_name]['is_activated']
+                    todo.todo_menu.controls[1].controls.append(Task(task_name, todo.task_delete, checked))
+                    todo.update()
 
     page.theme_mode = ft.ThemeMode.DARK
 
@@ -39,4 +40,4 @@ def main(page: ft.Page):
     json_tasks_load()
 
 
-ft.app(target=main)
+ft.app(target=main, view=ft.AppView.WEB_BROWSER)
